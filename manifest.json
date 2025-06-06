@@ -1,0 +1,10 @@
+{
+    "id": "current-line-char-count",
+    "name": "Current Line Character Count",
+    "version": "1.0.0",
+    "minAppVersion": "0.15.0",
+    "description": "Displays the character count of the current line in the status bar.",
+    "author": "Your Name",
+    "authorUrl": "https://yourwebsite.com",
+    "isDesktopOnly": false
+}
