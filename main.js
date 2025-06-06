@@ -52,13 +52,41 @@ class LineCharCountViewPlugin {
     }
     updateCount(view, forceUpdate = false) {
         if (!view.hasFocus) { // エディタがフォーカスを持っていない場合は何もしない (またはN/A表示)
-            // this.plugin.updateStatusBar(null); // フォーカスが外れたらN/Aにする場合
+            this.plugin.updateStatusBar(null); // フォーカスが外れたらN/Aにする
             return;
         }
+
         const cursorPos = view.state.selection.main.head;
         const currentLine = view.state.doc.lineAt(cursorPos);
-        const charCount = currentLine.text.length;
         const currentLineNumber = currentLine.number;
+
+        // --- ここから修正部分 ---
+        let lineText = currentLine.text;
+
+        // 1. 行頭・行末の空白をトリム
+        lineText = lineText.trim();
+
+        // 2. Markdownの記号やリスト記号、チェックボックスなどを除去する正規表現
+        //    一般的なMarkdown記号: # (ヘッダー), * - + (リスト), > (引用), = (セクション),
+        //    ` (コード), ~ (打ち消し), _ (斜体), ** __ (強調), []() (リンク), ![]() (画像)
+        //    チェックボックス: - [ ] または - [x]
+        //    これらは一例であり、Obsidianで使われる全ての記号を網羅するものではありません。
+        //    複雑なMarkdown構文に対応するには、より高度なパースが必要になりますが、
+        //    ここでは一般的な記号を除去することを目的とします。
+        const markdownRegex = /(^#+\s*)|(^[\s\t]*[-*+]\s+\[[ xX]?\]\s+)|(^[\s\t]*[-*+]\s+)|(^>\s*)|([`*~_])|(\[.*?\]\(.*?\))|(!\[.*?\]\(.*?\))/g;
+        lineText = lineText.replace(markdownRegex, '');
+
+        // 3. 複数の連続する空白を1つの空白に置換し、さらにトリムして単語間の空白のみにする
+        //    これにより、途中の空白もカウントされなくなる（厳密には単語間の空白は残る）
+        //    もし単語間の空白もカウントしたくない場合は、次の行をコメントアウトして
+        //    lineText = lineText.replace(/\s+/g, ''); を使用してください。
+        lineText = lineText.replace(/\s+/g, ' ');
+        lineText = lineText.trim(); // 複数空白置換後に再度トリム
+
+        // 最終的な文字数を計算
+        const charCount = lineText.length;
+        // --- 修正部分ここまで ---
+
         // 行が変わったか、文字数が変わったか、強制更新の場合のみステータスバーを更新
         if (forceUpdate || currentLineNumber !== this.lastLineNumber || charCount !== this.lastReportedCharCount) {
             this.plugin.updateStatusBar(charCount);
